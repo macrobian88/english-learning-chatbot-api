@@ -12,36 +12,97 @@ Production-grade Node.js API for an AI-powered English learning chatbot with RAG
 - **VTT Support**: Parse and process video transcript files
 - **Production Ready**: Rate limiting, logging, error handling, health checks
 
+## Architecture
+
+```
+┌─────────────┐     ┌──────────────────┐     ┌─────────────┐
+│   Frontend  │────▶│   Node.js API    │────▶│   MongoDB   │
+└─────────────┘     │   (Express)      │     │   Atlas     │
+                    └────────┬─────────┘     └─────────────┘
+                             │
+                    ┌────────▼─────────┐
+                    │  OpenAI API      │
+                    │  (GPT-4o-mini)   │
+                    └──────────────────┘
+```
+
 ## Quick Start
+
+### Prerequisites
+
+- Node.js 18+
+- MongoDB Atlas account with vector search enabled
+- OpenAI API key
+
+### Installation
 
 ```bash
 git clone https://github.com/macrobian88/english-learning-chatbot-api.git
 cd english-learning-chatbot-api
 npm install
 cp .env.example .env
+# Edit .env with your credentials
 npm run dev
+```
+
+### Docker
+
+```bash
+docker build -t english-chatbot-api .
+docker run -p 3000:3000 --env-file .env english-chatbot-api
 ```
 
 ## API Endpoints
 
 ### Chat APIs
-- `POST /api/chat` - Full response
-- `POST /api/chat/stream` - Streaming response (SSE)
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| `POST` | `/api/chat` | Full response |
+| `POST` | `/api/chat/stream` | Streaming response (SSE) |
 
 ### Conversation APIs
-- `GET /api/conversations` - Get user's conversation list
-- `GET /api/conversations/:topic_id` - Get specific conversation
-- `DELETE /api/conversations/:topic_id` - Clear conversation
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| `GET` | `/api/conversations` | List user conversations |
+| `GET` | `/api/conversations/:topic_id` | Get conversation history |
+| `DELETE` | `/api/conversations/:topic_id` | Clear conversation |
 
 ### Admin APIs (requires API key)
-- `POST /api/admin/topics` - Create new topic
-- `GET /api/admin/topics` - List all topics
-- `PUT /api/admin/topics/:topic_id` - Update topic
-- `DELETE /api/admin/topics/:topic_id` - Delete topic
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| `POST` | `/api/admin/topics` | Create topic |
+| `GET` | `/api/admin/topics` | List topics |
+| `GET` | `/api/admin/topics/:topic_id` | Get topic |
+| `PUT` | `/api/admin/topics/:topic_id` | Update topic |
+| `DELETE` | `/api/admin/topics/:topic_id` | Delete topic |
+| `POST` | `/api/admin/topics/bulk` | Bulk upload |
 
 ## MongoDB Atlas Setup
 
-Create a vector search index on the `chunks` collection with name `chunk_vector_index`.
+Create vector search index on `chunks` collection:
+
+```json
+{
+  "mappings": {
+    "dynamic": true,
+    "fields": {
+      "embedding": {
+        "type": "knnVector",
+        "dimensions": 1536,
+        "similarity": "cosine"
+      },
+      "topic_id": {
+        "type": "token"
+      }
+    }
+  }
+}
+```
+
+Name: `chunk_vector_index`
 
 ## License
 
