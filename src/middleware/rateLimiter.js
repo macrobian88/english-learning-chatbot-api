@@ -4,7 +4,10 @@ const config = require('../config');
 const generalLimiter = rateLimit({
   windowMs: config.rateLimit.windowMs,
   max: config.rateLimit.maxRequests,
-  message: { success: false, error: 'Too many requests. Please try again later.' },
+  message: {
+    success: false,
+    error: 'Too many requests. Please try again later.'
+  },
   standardHeaders: true,
   legacyHeaders: false,
   keyGenerator: (req) => req.body?.user_id || req.query?.user_id || req.ip
@@ -13,7 +16,10 @@ const generalLimiter = rateLimit({
 const chatLimiter = rateLimit({
   windowMs: 60 * 1000,
   max: 20,
-  message: { success: false, error: 'Too many chat requests. Please slow down.' },
+  message: {
+    success: false,
+    error: 'Too many chat requests. Please slow down.'
+  },
   standardHeaders: true,
   legacyHeaders: false,
   keyGenerator: (req) => req.body?.user_id || req.ip
@@ -22,9 +28,16 @@ const chatLimiter = rateLimit({
 const adminLimiter = rateLimit({
   windowMs: 60 * 1000,
   max: 30,
-  message: { success: false, error: 'Too many admin requests. Please slow down.' },
+  message: {
+    success: false,
+    error: 'Too many admin requests. Please slow down.'
+  },
   standardHeaders: true,
   legacyHeaders: false
 });
 
-module.exports = { generalLimiter, chatLimiter, adminLimiter };
+module.exports = {
+  generalLimiter,
+  chatLimiter,
+  adminLimiter
+};

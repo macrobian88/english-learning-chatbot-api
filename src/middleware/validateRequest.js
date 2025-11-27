@@ -67,13 +67,24 @@ const schemas = {
 function validate(schemaName, source = 'body') {
   return (req, res, next) => {
     const schema = schemas[schemaName];
-    if (!schema) return next(new Error(`Unknown validation schema: ${schemaName}`));
+    
+    if (!schema) {
+      return next(new Error(`Unknown validation schema: ${schemaName}`));
+    }
 
-    const { error, value } = schema.validate(req[source], { abortEarly: false, stripUnknown: true });
+    const data = req[source];
+    const { error, value } = schema.validate(data, {
+      abortEarly: false,
+      stripUnknown: true
+    });
 
     if (error) {
       const details = error.details.map(d => d.message);
-      return res.status(400).json({ success: false, error: 'Validation error', details });
+      return res.status(400).json({
+        success: false,
+        error: 'Validation error',
+        details
+      });
     }
 
     req[source] = value;
@@ -81,4 +92,7 @@ function validate(schemaName, source = 'body') {
   };
 }
 
-module.exports = { validate, schemas };
+module.exports = {
+  validate,
+  schemas
+};

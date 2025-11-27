@@ -11,11 +11,20 @@ class APIError extends Error {
 }
 
 function notFoundHandler(req, res, next) {
-  res.status(404).json({ success: false, error: 'Endpoint not found', path: req.originalUrl });
+  res.status(404).json({
+    success: false,
+    error: 'Endpoint not found',
+    path: req.originalUrl
+  });
 }
 
 function errorHandler(err, req, res, next) {
-  logger.error('Error:', { message: err.message, stack: err.stack, path: req.originalUrl, method: req.method });
+  logger.error('Error:', {
+    message: err.message,
+    stack: err.stack,
+    path: req.originalUrl,
+    method: req.method
+  });
 
   if (err.name === 'ValidationError') {
     return res.status(400).json({
@@ -34,24 +43,49 @@ function errorHandler(err, req, res, next) {
   }
 
   if (err.name === 'CastError') {
-    return res.status(400).json({ success: false, error: 'Invalid ID format' });
+    return res.status(400).json({
+      success: false,
+      error: 'Invalid ID format'
+    });
   }
 
   if (err.response?.status) {
     const status = err.response.status;
     let message = 'AI service error';
-    if (status === 429) message = 'AI service rate limit exceeded. Please try again later.';
-    else if (status === 401) message = 'AI service authentication error';
-    return res.status(502).json({ success: false, error: message });
+
+    if (status === 429) {
+      message = 'AI service rate limit exceeded. Please try again later.';
+    } else if (status === 401) {
+      message = 'AI service authentication error';
+    }
+
+    return res.status(502).json({
+      success: false,
+      error: message
+    });
   }
 
   if (err instanceof APIError) {
-    return res.status(err.statusCode).json({ success: false, error: err.message, code: err.code });
+    return res.status(err.statusCode).json({
+      success: false,
+      error: err.message,
+      code: err.code
+    });
   }
 
   const statusCode = err.statusCode || 500;
-  const message = process.env.NODE_ENV === 'production' ? 'An unexpected error occurred' : err.message;
-  res.status(statusCode).json({ success: false, error: message });
+  const message = process.env.NODE_ENV === 'production'
+    ? 'An unexpected error occurred'
+    : err.message;
+
+  res.status(statusCode).json({
+    success: false,
+    error: message
+  });
 }
 
-module.exports = { APIError, errorHandler, notFoundHandler };
+module.exports = {
+  APIError,
+  errorHandler,
+  notFoundHandler
+};
