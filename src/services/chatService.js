@@ -6,6 +6,9 @@ const { generateEmbedding } = require('./embeddingService');
 const config = require('../config');
 const logger = require('../utils/logger');
 
+/**
+ * Build system prompt for the chatbot
+ */
 function buildSystemPrompt(topic, context) {
   return `You are an English learning assistant for the topic: "${topic.title}"
 
@@ -24,6 +27,9 @@ STRICT RULES:
 6. If you're unsure whether information is in the context, err on the side of caution and redirect the user`;
 }
 
+/**
+ * Perform vector search to find relevant chunks
+ */
 async function vectorSearch(topicId, query) {
   const queryEmbedding = await generateEmbedding(query);
 
@@ -51,12 +57,20 @@ async function vectorSearch(topicId, query) {
   return results;
 }
 
+/**
+ * Get conversation history for a user and topic
+ */
 async function getConversationHistory(userId, topicId) {
   const conversation = await Conversation.findOne({ user_id: userId, topic_id: topicId });
+  
   if (!conversation) return [];
+
   return conversation.messages.slice(-config.chat.maxConversationHistory);
 }
 
+/**
+ * Save messages to conversation history
+ */
 async function saveConversation(userId, topicId, userMessage, assistantReply) {
   await Conversation.findOneAndUpdate(
     { user_id: userId, topic_id: topicId },
@@ -75,11 +89,17 @@ async function saveConversation(userId, topicId, userMessage, assistantReply) {
   );
 }
 
+/**
+ * Process a chat message (non-streaming)
+ */
 async function processChat(userId, topicId, message) {
   const topic = await Topic.findOne({ topic_id: topicId });
-  if (!topic) throw new Error(`Topic ${topicId} not found`);
+  if (!topic) {
+    throw new Error(`Topic ${topicId} not found`);
+  }
 
   const relevantChunks = await vectorSearch(topicId, message);
+  
   if (relevantChunks.length === 0) {
     logger.warn(`No chunks found for topic ${topicId}`);
   }
@@ -101,15 +121,25 @@ async function processChat(userId, topicId, message) {
   });
 
   const reply = completion.choices[0].message.content;
+
   await saveConversation(userId, topicId, message, reply);
 
   const conversation = await Conversation.findOne({ user_id: userId, topic_id: topicId });
-  return { reply, conversationId: conversation._id.toString() };
+
+  return {
+    reply,
+    conversationId: conversation._id.toString()
+  };
 }
 
+/**
+ * Process a chat message with streaming
+ */
 async function processChatStream(userId, topicId, message, onChunk, onComplete) {
   const topic = await Topic.findOne({ topic_id: topicId });
-  if (!topic) throw new Error(`Topic ${topicId} not found`);
+  if (!topic) {
+    throw new Error(`Topic ${topicId} not found`);
+  }
 
   const relevantChunks = await vectorSearch(topicId, message);
   const context = relevantChunks.map(c => c.content).join('\n\n---\n\n');
@@ -138,8 +168,19 @@ async function processChatStream(userId, topicId, message, onChunk, onComplete) 
   }
 
   await saveConversation(userId, topicId, message, fullReply);
+
   const conversation = await Conversation.findOne({ user_id: userId, topic_id: topicId });
-  onComplete({ fullReply, conversationId: conversation._id.toString() });
+
+  onComplete({
+    fullReply,
+    conversationId: conversation._id.toString()
+  });
 }
 
-module.exports = { processChat, processChatStream, getConversationHistory, buildSystemPrompt, vectorSearch };
+module.exports = {
+  processChat,
+  processChatStream,
+  getConversationHistory,
+  buildSystemPrompt,
+  vectorSearch
+};
