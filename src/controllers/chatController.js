@@ -1,21 +1,34 @@
 const { processChat, processChatStream } = require('../services/chatService');
 const logger = require('../utils/logger');
 
+/**
+ * Handle non-streaming chat request
+ */
 async function chat(req, res, next) {
   try {
     const { user_id, topic_id, message } = req.body;
+
     logger.info(`Chat request: user=${user_id}, topic=${topic_id}`);
 
     const result = await processChat(user_id, topic_id, message);
-    res.json({ success: true, reply: result.reply, conversation_id: result.conversationId });
+
+    res.json({
+      success: true,
+      reply: result.reply,
+      conversation_id: result.conversationId
+    });
   } catch (error) {
     next(error);
   }
 }
 
+/**
+ * Handle streaming chat request (SSE)
+ */
 async function chatStream(req, res, next) {
   try {
     const { user_id, topic_id, message } = req.body;
+
     logger.info(`Stream chat request: user=${user_id}, topic=${topic_id}`);
 
     res.setHeader('Content-Type', 'text/event-stream');
@@ -46,11 +59,17 @@ async function chatStream(req, res, next) {
       }
     );
   } catch (error) {
-    if (!res.headersSent) res.setHeader('Content-Type', 'text/event-stream');
+    if (!res.headersSent) {
+      res.setHeader('Content-Type', 'text/event-stream');
+    }
     res.write(`data: ${JSON.stringify({ error: error.message })}\n\n`);
     res.end();
+    
     logger.error('Stream chat error:', error);
   }
 }
 
-module.exports = { chat, chatStream };
+module.exports = {
+  chat,
+  chatStream
+};
