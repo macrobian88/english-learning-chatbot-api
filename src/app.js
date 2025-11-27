@@ -8,13 +8,11 @@ const { connectDatabase } = require('./config/database');
 const config = require('./config');
 const logger = require('./utils/logger');
 
-// Routes
 const chatRoutes = require('./routes/chat');
 const conversationRoutes = require('./routes/conversations');
 const adminRoutes = require('./routes/admin');
 const healthRoutes = require('./routes/health');
 
-// Middleware
 const { errorHandler, notFoundHandler } = require('./middleware/errorHandler');
 const { generalLimiter } = require('./middleware/rateLimiter');
 
@@ -55,7 +53,6 @@ app.use('/api/admin', adminRoutes);
 app.use(notFoundHandler);
 app.use(errorHandler);
 
-// Start server
 const startServer = async () => {
   try {
     await connectDatabase();
@@ -70,7 +67,6 @@ const startServer = async () => {
   }
 };
 
-// Graceful shutdown
 process.on('SIGTERM', async () => {
   logger.info('SIGTERM received. Shutting down gracefully...');
   process.exit(0);

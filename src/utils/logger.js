@@ -36,6 +36,7 @@ if (config.nodeEnv === 'production') {
     maxsize: 5242880,
     maxFiles: 5
   }));
+  
   logger.add(new winston.transports.File({
     filename: 'logs/combined.log',
     maxsize: 5242880,
