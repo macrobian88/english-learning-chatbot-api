@@ -1,14 +1,19 @@
 /**
- * Parse VTT content and extract plain text
+ * Parse VTT (Web Video Text Tracks) content and extract plain text
+ * @param {string} vttContent - Raw VTT file content
+ * @returns {string} - Extracted plain text
  */
 function parseVTT(vttContent) {
-  if (!vttContent || typeof vttContent !== 'string') return '';
+  if (!vttContent || typeof vttContent !== 'string') {
+    return '';
+  }
 
   const lines = vttContent.split('\n');
   const textLines = [];
 
   for (const line of lines) {
     const trimmedLine = line.trim();
+
     if (!trimmedLine) continue;
     if (trimmedLine.startsWith('WEBVTT')) continue;
     if (trimmedLine.startsWith('NOTE')) continue;
@@ -30,25 +35,33 @@ function parseVTT(vttContent) {
       .replace(/&gt;/g, '>')
       .trim();
 
-    if (cleanedLine) textLines.push(cleanedLine);
+    if (cleanedLine) {
+      textLines.push(cleanedLine);
+    }
   }
 
   return textLines.join(' ').replace(/\s+/g, ' ').trim();
 }
 
 /**
- * Parse VTT with timestamps preserved
+ * Parse VTT content while preserving timestamp information
+ * @param {string} vttContent - Raw VTT file content
+ * @returns {Array<{start: string, end: string, text: string}>}
  */
 function parseVTTWithTimestamps(vttContent) {
-  if (!vttContent || typeof vttContent !== 'string') return [];
+  if (!vttContent || typeof vttContent !== 'string') {
+    return [];
+  }
 
   const segments = [];
   const lines = vttContent.split('\n');
+  
   let currentSegment = null;
   let textBuffer = [];
 
   for (const line of lines) {
     const trimmedLine = line.trim();
+
     const timestampMatch = trimmedLine.match(
       /(\d{2}:\d{2}:\d{2}\.\d{3}|\d{2}:\d{2}\.\d{3})\s*-->\s*(\d{2}:\d{2}:\d{2}\.\d{3}|\d{2}:\d{2}\.\d{3})/
     );
@@ -56,9 +69,16 @@ function parseVTTWithTimestamps(vttContent) {
     if (timestampMatch) {
       if (currentSegment && textBuffer.length > 0) {
         currentSegment.text = textBuffer.join(' ').replace(/<[^>]+>/g, '').trim();
-        if (currentSegment.text) segments.push(currentSegment);
+        if (currentSegment.text) {
+          segments.push(currentSegment);
+        }
       }
-      currentSegment = { start: timestampMatch[1], end: timestampMatch[2], text: '' };
+
+      currentSegment = {
+        start: timestampMatch[1],
+        end: timestampMatch[2],
+        text: ''
+      };
       textBuffer = [];
     } else if (currentSegment && trimmedLine && !trimmedLine.startsWith('WEBVTT')) {
       if (!/^[a-zA-Z0-9-]+$/.test(trimmedLine) || trimmedLine.includes(' ')) {
@@ -69,10 +89,15 @@ function parseVTTWithTimestamps(vttContent) {
 
   if (currentSegment && textBuffer.length > 0) {
     currentSegment.text = textBuffer.join(' ').replace(/<[^>]+>/g, '').trim();
-    if (currentSegment.text) segments.push(currentSegment);
+    if (currentSegment.text) {
+      segments.push(currentSegment);
+    }
   }
 
   return segments;
 }
 
-module.exports = { parseVTT, parseVTTWithTimestamps };
+module.exports = {
+  parseVTT,
+  parseVTTWithTimestamps
+};
